@@ -9,6 +9,7 @@ function Router() {
       <Switch>
         <PrivateRoute exact path="/room/:id" component={Room} />
         <PrivateRoute exact path="/" component={Index} />
+        <PrivateRoute path="/:teamId" component={Index} />
         <PublicRoute exact path="/login" component={Login} />
         <PublicRoute exact path="/register" component={Register} />
       </Switch>

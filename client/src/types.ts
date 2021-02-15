@@ -7,10 +7,24 @@ export type Message = {
   optimisticId?: string;
 };
 
+export type Channel = {
+  teamId: string;
+  _id: string;
+  name: string;
+};
+
+export type Team = {
+  name: string;
+  _id: string;
+  optimisticId?: string;
+  channels: Channel[];
+};
+
 export type User = {
   createdAt: string;
   updatedAt: string;
   name: string;
   email: string;
+  teams: Team[];
   _id: string;
 };

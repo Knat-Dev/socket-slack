@@ -1,15 +1,27 @@
-import { getModelForClass, mongoose, prop } from '@typegoose/typegoose';
+import {
+  getModelForClass,
+  modelOptions,
+  prop,
+  Severity,
+} from '@typegoose/typegoose';
+import { ObjectId } from '../../types';
+import { Team } from '../Team';
 
+@modelOptions({ options: { allowMixed: Severity.ALLOW } })
 export class User {
-  _id?: mongoose.Types.ObjectId;
+  _id?: ObjectId;
+  teams?: Team[];
 
-  @prop({ required: 'Name is required!' })
+  @prop()
   name: string;
 
-  @prop({ required: 'Email is required!' })
+  @prop()
   email: string;
 
-  @prop({ required: 'Password is required!' })
+  @prop({ default: [] })
+  teamIds?: ObjectId[];
+
+  @prop()
   password?: string;
 }
 
@@ -17,8 +29,9 @@ export const UserModel = getModelForClass(User, {
   schemaOptions: {
     timestamps: true,
     toJSON: {
-      transform: function (doc, ret, opt) {
+      transform: function (_, ret, __) {
         delete ret['password'];
+        delete ret['teamIds'];
         return ret;
       },
     },

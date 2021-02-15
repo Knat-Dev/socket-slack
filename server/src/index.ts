@@ -4,14 +4,15 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
 import { createServer } from 'http';
-import { verify } from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import { Server } from 'socket.io';
 import { logger } from './middleware';
-import { MessageModel, UserModel } from './models';
+import { ChannelModel, MessageModel } from './models';
+import { Team, TeamModel } from './models/Team';
 import { chatRoomsRoute } from './routes/chatRooms.route';
 import { userRouter } from './routes/users.route';
 import { Socket } from './types';
+import { socketAuth } from './utils';
 dotenv.config();
 
 const port = process.env.PORT ? parseInt(process.env.PORT) : 5000;
@@ -52,34 +53,52 @@ http.listen(port, async () => {
     },
   });
 
-  io.use(async (socket: Socket, next: any) => {
-    const token = socket.handshake.query.token as string;
-
-    try {
-      const payload = verify(token, process.env.JWT_SECRET) as { id: string };
-      socket.userId = payload.id;
-      const user = await UserModel.findById(payload.id);
-
-      if (user) {
-        socket.user = user;
-        return next();
-      }
-    } catch (e) {
-      return socket.disconnect();
-    }
-  });
+  io.use(socketAuth);
 
   const users: { [key: string]: boolean } = {};
+
+  io.of((name, auth, next) => {
+    if (name === '/not_found') return next(null, false);
+    // name will contain a teamId, if team exists in db we will go to next
+    next(null, true); // or false, when the creation is denied
+  })
+    .use(socketAuth)
+    .on('connection', (socket: Socket) => {
+      console.log(socket.nsp.name + ' ' + socket.user?._id);
+    });
 
   io.on('connect', async (socket: Socket) => {
     if (socket.user && socket.userId) {
       users[socket.userId] = true;
-      // console.log("Connected: " + socket.userId);
-      socket.emit('welcome', 'Welcome to the server..');
-      socket.emit('broadcast_me', socket.user);
+
+      /**
+       * Getting Me Data
+       */
+      const teams = await TeamModel.aggregate([
+        {
+          $match: {
+            $or: [
+              { userIds: { $elemMatch: { $eq: socket.user._id } } },
+              { ownerId: socket.user._id },
+            ],
+          },
+        },
+        {
+          $lookup: {
+            from: 'channels',
+            localField: '_id',
+            foreignField: 'teamId',
+            as: 'channels',
+          },
+        },
+      ]);
+      socket.user.teams = teams;
+      socket.emit('broadcast_me', { ...socket.user });
       socket.on('refresh_page', () =>
         console.log('Page Refreshed: ' + socket.userId)
       );
+      // console.log("Connected: " + socket.userId);
+      socket.emit('welcome', 'Welcome to the server..');
 
       // Room joining ability
       socket.on('join_room', ({ id }) => {
@@ -154,6 +173,29 @@ http.listen(port, async () => {
       socket.on('i_stopped_typing', ({ id }) => {
         if (socket.user?.name) {
           socket.to(id).emit('user_stopped_typing', socket.user);
+        }
+      });
+
+      // Teams
+      socket.on('team_created', async ({ team }: { team: Team }) => {
+        if (socket.user?._id) {
+          const newTeam = await await TeamModel.create({
+            ...team,
+            ownerId: socket.user?._id,
+          });
+          const generalChannel = await ChannelModel.create({
+            name: 'general',
+            teamId: newTeam._id,
+          });
+          // if general channel exists, the team was created successfully
+          if (generalChannel)
+            socket.emit('team_created', {
+              newTeam: {
+                ...newTeam.toJSON(),
+                optimisticId: team._id,
+                channels: [generalChannel],
+              },
+            });
         }
       });
 

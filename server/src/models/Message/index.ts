@@ -1,6 +1,12 @@
-import { getModelForClass, prop } from '@typegoose/typegoose';
+import {
+  getModelForClass,
+  modelOptions,
+  prop,
+  Severity,
+} from '@typegoose/typegoose';
 import { User } from '../User';
 
+@modelOptions({ options: { allowMixed: Severity.ALLOW } })
 export class Message {
   _id?: string;
 

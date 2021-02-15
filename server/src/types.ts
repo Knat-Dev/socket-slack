@@ -1,3 +1,4 @@
+import { mongoose } from '@typegoose/typegoose';
 import { Request as ExpressRequest } from 'express';
 import { Socket as IOSocket } from 'socket.io';
 import { User } from './models';
@@ -24,3 +25,5 @@ export type RegisterInput = {
 export type ChatRoomInput = {
   name: string;
 };
+
+export type ObjectId = mongoose.Types.ObjectId;

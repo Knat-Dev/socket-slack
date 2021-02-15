@@ -1,19 +1,10 @@
-import {
-  ChakraProvider,
-  ColorModeScript,
-  Flex,
-  Spinner,
-} from '@chakra-ui/react';
+import { ColorModeScript } from '@chakra-ui/react';
 import React, { FC, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
-import {
-  AuthContextProvider,
-  ChannelContextProvider,
-  SocketContextProvider,
-  useAuthContext,
-} from './context';
-import { ChatContextProvider } from './context/Chat';
+import { LoadingScreen } from './components';
+import { useAuthContext } from './context';
 import './index.css';
+import Providers from './Providers';
 import reportWebVitals from './reportWebVitals';
 import Router from './router/Router';
 import { setAccessToken } from './utils';
@@ -42,28 +33,15 @@ const App: FC = () => {
       });
   }, [setAuthState]);
 
-  if (loading)
-    return (
-      <Flex h="100vh" justify="center" align="center">
-        <Spinner size="xl" color="purple.500" />
-      </Flex>
-    );
+  if (loading) return <LoadingScreen />;
   return <Router />;
 };
 
 ReactDOM.render(
-  <ChannelContextProvider>
-    <ChatContextProvider>
-      <SocketContextProvider>
-        <AuthContextProvider>
-          <ChakraProvider theme={theme}>
-            <ColorModeScript initialColorMode={theme.config.initialColorMode} />
-            <App />
-          </ChakraProvider>
-        </AuthContextProvider>
-      </SocketContextProvider>
-    </ChatContextProvider>
-  </ChannelContextProvider>,
+  <Providers>
+    <ColorModeScript initialColorMode={theme.config.initialColorMode} />
+    <App />
+  </Providers>,
   document.getElementById('root')
 );
 
