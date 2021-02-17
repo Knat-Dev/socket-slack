@@ -25,16 +25,6 @@ export const TeamContextProvider: React.FC = (props) => {
   const [state, dispatch] = useReducer(teamsReducer, initial);
   const defaultTeamContext: [Teams, typeof dispatch] = [state, dispatch];
 
-  //   useEffect(() => {
-  //     socket?.on('connect', () => {
-  //       dispatch({ type: 'set_nsp', teamId: 'not_found' });
-  //     });
-
-  //     return () => {
-  //       socket?.off('connect');
-  //     };
-  //   }, [socket]);
-
   return (
     <TeamsContext.Provider value={defaultTeamContext}>
       {props.children}

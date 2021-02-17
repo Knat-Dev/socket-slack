@@ -4,13 +4,15 @@ import React, { FC, useEffect, useState } from 'react';
 import { Waypoint } from 'react-waypoint';
 import { useChannelContext, useSocketContext } from '../../../../context';
 import { useChatContext } from '../../../../context/Chat';
+import { useTeamsContext } from '../../../../context/Team';
 import { Message } from '../../../../types';
 import axios from '../../../../utils/axios';
 import { MessageItem } from './components';
 
 export const Messages: FC = () => {
   const [socket] = useSocketContext();
-  const [{ id }] = useChannelContext();
+  const [{ selectedChannel }] = useChannelContext();
+  const [{ socket: nspSocket }] = useTeamsContext();
   const [{ messages, loading }, dispatch] = useChatContext();
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
@@ -21,7 +23,7 @@ export const Messages: FC = () => {
         `${process.env.REACT_APP_API}/chats/messages`,
         {
           params: {
-            channelId: id,
+            channelId: selectedChannel?._id,
             cursor,
           },
         }
@@ -40,10 +42,10 @@ export const Messages: FC = () => {
         });
       }
     })();
-  }, [id, dispatch, cursor]);
+  }, [selectedChannel, dispatch, cursor]);
 
   useEffect(() => {
-    socket?.on('message_from_server', (message: Message) => {
+    nspSocket?.on('new_message', (message: Message) => {
       const optimisticUpdateMessageId = messages.findIndex(
         (optimisticMessage) =>
           optimisticMessage.optimisticId === message.optimisticId
@@ -61,11 +63,11 @@ export const Messages: FC = () => {
       }
     });
 
-    socket?.on('message_deleted', ({ id }: { id: string }) => {
+    nspSocket?.on('message_deleted', ({ id }: { id: string }) => {
       dispatch({ type: 'delete_message', messageId: id });
     });
 
-    socket?.on(
+    nspSocket?.on(
       'message_edited',
       ({ id, text }: { id: string; text: string }) => {
         dispatch({
@@ -77,16 +79,16 @@ export const Messages: FC = () => {
     );
 
     return () => {
-      socket?.off('message_from_server');
-      socket?.off('message_deleted');
-      socket?.off('message_edited');
+      nspSocket?.off('new_message');
+      nspSocket?.off('message_deleted');
+      nspSocket?.off('message_edited');
     };
-  }, [socket, messages, dispatch]);
+  }, [nspSocket, messages, dispatch]);
 
   const deleteMessage = (message: Message) => {
     const messageId = message._id;
     if (messageId && message.user._id === socket?.user?._id) {
-      socket?.emit('message_deleted', { id: messageId });
+      nspSocket?.emit('message_deleted', { id: messageId });
       dispatch({ type: 'delete_message', messageId });
     }
   };
@@ -95,7 +97,7 @@ export const Messages: FC = () => {
     console.log(message);
     const messageId = message._id;
     if (messageId && message.user._id === socket?.user?._id) {
-      socket?.emit('message_edited', { id: messageId, text: message.text });
+      nspSocket?.emit('message_edited', { id: messageId, text: message.text });
       dispatch({
         type: 'edit_message',
         messageId,
@@ -121,26 +123,28 @@ export const Messages: FC = () => {
       <Spinner size="xl" color="purple.500" />
     </Flex>
   ) : (
-    <List>
-      {!hasMore && (
-        <Text textAlign="center" py={2}>
-          Chat began here..
-        </Text>
-      )}
-      {messages.map((message, i) => {
-        if (i === 10 && hasMore)
-          return (
-            <Waypoint
-              key={message._id ?? randomBytes(12).toString('hex')}
-              onEnter={() => {
-                if (messages[0]._id) setCursor(messages[0]._id);
-              }}
-            >
-              <div>{messageItem(message, i)}</div>
-            </Waypoint>
-          );
-        else return messageItem(message, i);
-      })}
-    </List>
+    <>
+      <List>
+        {!hasMore && (
+          <Text textAlign="center" py={2}>
+            Chat began here..
+          </Text>
+        )}
+        {messages.map((message, i) => {
+          if (i === 10 && hasMore)
+            return (
+              <Waypoint
+                key={message._id ?? randomBytes(12).toString('hex')}
+                onEnter={() => {
+                  if (messages[0]._id) setCursor(messages[0]._id);
+                }}
+              >
+                <div>{messageItem(message, i)}</div>
+              </Waypoint>
+            );
+          else return messageItem(message, i);
+        })}
+      </List>
+    </>
   );
 };

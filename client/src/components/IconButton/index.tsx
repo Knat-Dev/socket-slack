@@ -19,7 +19,7 @@ export const IconButton: FC<Props> = ({ children, label, ...button }) => {
         minW="26px"
         w="26px"
         borderRadius="50%"
-        backgroundColor="rgba(0,0,0,0)"
+        backgroundColor={button.background ?? 'transparent'}
         color="white"
         mr={button.mr}
         onClick={button.onClick}

@@ -1,6 +1,6 @@
 import { io } from 'socket.io-client';
 import { Teams } from '..';
-import { Team } from '../../../types';
+import { Channel, Team } from '../../../types';
 import { getAccessToken } from '../../../utils';
 
 export type Action =
@@ -17,17 +17,25 @@ export type Action =
       teams: Team[];
     }
   | {
-      type: 'set_nsp';
-      teamId: string;
+      type: 'add_channel';
+      channel: Channel;
     };
 
 export const teamsReducer = (state: Teams, action: Action): Teams => {
   switch (action.type) {
-    case 'set_selected_team':
+    case 'set_selected_team': {
+      // start off by setting the namespace connection
+      state.socket?.disconnect();
+      const token = getAccessToken();
+      if (!token) return state;
       return {
         ...state,
         selectedTeam: action.team,
+        socket: io(`ws://localhost:5000/${action.team._id}`, {
+          query: { token },
+        }),
       };
+    }
     case 'add_team': {
       return {
         ...state,
@@ -39,15 +47,20 @@ export const teamsReducer = (state: Teams, action: Action): Teams => {
         ...state,
         teams: action.teams,
       };
-    case 'set_nsp': {
-      state.socket?.disconnect();
-      const token = getAccessToken();
-      if (!token) return state;
+    case 'add_channel': {
+      const teams = [...state.teams];
+      const teamIndex = teams.findIndex(
+        (team) => team._id === action.channel.teamId
+      );
+      if (teamIndex !== -1) {
+        teams[teamIndex].channels = [
+          ...teams[teamIndex].channels,
+          action.channel,
+        ];
+      }
       return {
         ...state,
-        socket: io(`ws://localhost:5000/${action.teamId}`, {
-          query: { token },
-        }),
+        teams,
       };
     }
     default:

@@ -55,16 +55,107 @@ http.listen(port, async () => {
 
   io.use(socketAuth);
 
-  const users: { [key: string]: boolean } = {};
-
-  io.of((name, auth, next) => {
+  const users: Record<string, boolean> = {};
+  const getTeamFromNsp = async (name: string) => {
+    const teamId = name.split('/')[1];
+    return await TeamModel.findById(teamId);
+  };
+  io.of(async (name, _auth, next) => {
     if (name === '/not_found') return next(null, false);
-    // name will contain a teamId, if team exists in db we will go to next
-    next(null, true); // or false, when the creation is denied
+    else {
+      if (await getTeamFromNsp(name)) return next(null, true);
+    }
   })
     .use(socketAuth)
-    .on('connection', (socket: Socket) => {
-      console.log(socket.nsp.name + ' ' + socket.user?._id);
+    .on('connection', async (socket: Socket) => {
+      socket.on('join_channel', async ({ id, teamId }) => {
+        const team = await TeamModel.findById(mongoose.Types.ObjectId(teamId));
+        const channel = await ChannelModel.findOne({
+          _id: mongoose.Types.ObjectId(id),
+          teamId: mongoose.Types.ObjectId(team?.id),
+        });
+        console.log('Joined Channel: /' + team?._id + '#' + channel?.name);
+        socket.join(id);
+      });
+
+      socket.on('leave_channel', async ({ id, teamId }) => {
+        const team = await TeamModel.findById(mongoose.Types.ObjectId(teamId));
+        const channel = await ChannelModel.findOne({
+          _id: mongoose.Types.ObjectId(id),
+          teamId: mongoose.Types.ObjectId(team?.id),
+        });
+        console.log('Left Channel: /' + team?._id + '#' + channel?.name);
+        socket.leave(id);
+      });
+
+      // Messages
+      socket.on(
+        'new_message',
+        async ({
+          channelId,
+          text,
+          optimisticId,
+        }: {
+          [key: string]: string;
+        }) => {
+          if (socket.user && socket.userId && text.trim()) {
+            const message = await MessageModel.create({
+              channelId,
+              text,
+              user: socket.user,
+            });
+            message.optimisticId = optimisticId;
+            io.of(socket.nsp.name)
+              .to(channelId)
+              .emit('new_message', {
+                ...message.toJSON(),
+                optimisticId,
+              });
+          }
+        }
+      );
+
+      socket.on('message_deleted', async ({ id }) => {
+        const message = await MessageModel.findById(id);
+        if (
+          message &&
+          message.user._id &&
+          mongoose.Types.ObjectId(socket.userId).equals(message.user._id)
+        ) {
+          await message.remove();
+          io.of(socket.nsp.name)
+            .to(message.channelId)
+            .emit('message_deleted', { id });
+        }
+      });
+
+      socket.on('message_edited', async ({ id, text }) => {
+        const message = await MessageModel.findById(id);
+        if (
+          message &&
+          message.user._id &&
+          mongoose.Types.ObjectId(socket.userId).equals(message.user._id)
+        ) {
+          await MessageModel.findByIdAndUpdate(id, { text });
+          io.of(socket.nsp.name)
+            .to(message.channelId)
+            .emit('message_edited', { id, text });
+        }
+      });
+
+      socket.on('channel_created', async ({ _id, name, teamId }) => {
+        const team = await TeamModel.findById(mongoose.Types.ObjectId(teamId));
+        if (team) {
+          const channel = await ChannelModel.create({
+            name,
+            teamId: mongoose.Types.ObjectId(teamId),
+          });
+          io.of(socket.nsp.name).emit('channel_created', {
+            ...channel.toJSON(),
+            optimisticId: _id,
+          });
+        }
+      });
     });
 
   io.on('connect', async (socket: Socket) => {
@@ -99,69 +190,6 @@ http.listen(port, async () => {
       );
       // console.log("Connected: " + socket.userId);
       socket.emit('welcome', 'Welcome to the server..');
-
-      // Room joining ability
-      socket.on('join_room', ({ id }) => {
-        if (!socket.rooms.has(id)) {
-          console.log('Joined Room: ' + id);
-          socket.join(id);
-        }
-      });
-
-      // leave room
-      socket.on('leave_room', ({ id }) => {
-        console.log('Left Room: ' + id);
-        socket.leave(id);
-      });
-
-      // Messages
-      socket.on(
-        'message_from_client',
-        async ({
-          channelId,
-          text,
-          optimisticId,
-        }: {
-          [key: string]: string;
-        }) => {
-          if (socket.user && socket.userId && text.trim()) {
-            const message = await MessageModel.create({
-              channelId,
-              text,
-              user: socket.user,
-            });
-            message.optimisticId = optimisticId;
-            io.to(channelId).emit('message_from_server', {
-              ...message.toJSON(),
-              optimisticId,
-            });
-          }
-        }
-      );
-
-      socket.on('message_deleted', async ({ id }) => {
-        const message = await MessageModel.findById(id);
-        if (
-          message &&
-          message.user._id &&
-          mongoose.Types.ObjectId(socket.userId).equals(message.user._id)
-        ) {
-          await message.remove();
-          io.to(message.channelId).emit('message_deleted', { id });
-        }
-      });
-
-      socket.on('message_edited', async ({ id, text }) => {
-        const message = await MessageModel.findById(id);
-        if (
-          message &&
-          message.user._id &&
-          mongoose.Types.ObjectId(socket.userId).equals(message.user._id)
-        ) {
-          await MessageModel.findByIdAndUpdate(id, { text });
-          io.to(message.channelId).emit('message_edited', { id, text });
-        }
-      });
 
       // Typing users
       socket.on('i_am_typing', ({ id }) => {

@@ -6,7 +6,7 @@ export const PublicRoute: FC<RouteProps> = (props) => {
   const [authState] = useAuthContext();
 
   if (authState.loggedIn) {
-    const Component = () => <Redirect to="/" />;
+    const Component = () => <Redirect to="/dashboard" />;
     return <Route {...props} component={Component} />;
   }
   return <Route {...props} />;

@@ -4,22 +4,29 @@ import { Form, Formik } from 'formik';
 import React, { FC } from 'react';
 import { useChannelContext, useSocketContext } from '../../../../context';
 import { useChatContext } from '../../../../context/Chat';
+import { useTeamsContext } from '../../../../context/Team';
 import { Message } from '../../../../types';
 import { Input } from './components';
 
 export const ChatForm: FC = () => {
   const [socket] = useSocketContext();
+  const [{ socket: nspSocket }] = useTeamsContext();
   const [{ messages }, dispatch] = useChatContext();
-  const [{ id }] = useChannelContext();
+  const [{ selectedChannel }] = useChannelContext();
 
   return (
     <Formik
       initialValues={{ text: '' }}
       onSubmit={(values, { setFieldValue }) => {
-        if (socket?.connected && socket.user && values.text.trim()) {
+        if (
+          socket?.connected &&
+          socket.user &&
+          values.text.trim() &&
+          selectedChannel
+        ) {
           const _id = randomBytes(12).toString('hex');
           const message: Message = {
-            channelId: id,
+            channelId: selectedChannel._id,
             text: values.text,
             user: socket.user,
             optimisticId: _id,
@@ -30,7 +37,7 @@ export const ChatForm: FC = () => {
             type: 'set_messages',
             messages: [...messages, message],
           });
-          socket.emit('message_from_client', message);
+          nspSocket?.emit('new_message', message);
         }
       }}
     >
@@ -43,7 +50,7 @@ export const ChatForm: FC = () => {
                 autoComplete="off"
                 h="30px"
                 name="text"
-                placeholder={`Message #${id}`}
+                placeholder={`Message #${selectedChannel?.name}`}
               />
             </Box>
           </Form>

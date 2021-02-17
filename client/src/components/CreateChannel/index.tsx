@@ -2,32 +2,35 @@ import { Box, Button, Text } from '@chakra-ui/react';
 import { randomBytes } from 'crypto';
 import { Form, Formik } from 'formik';
 import React, { FC } from 'react';
-import { FormikInput } from '../../../../components';
-import { useSocketContext } from '../../../../context';
-import { useTeamsContext } from '../../../../context/Team';
-import { Team } from '../../../../types';
+import { FormikInput } from '..';
+import { useTeamsContext } from '../../context/Team';
+import { Channel } from '../../types';
 
-export const CreateTeam: FC = () => {
-  const [, dispatch] = useTeamsContext();
-  const [socket] = useSocketContext();
+interface Props {
+  onClose?: () => void;
+}
+
+export const CreateChannel: FC<Props> = ({ onClose }) => {
+  const [{ selectedTeam, socket }, dispatch] = useTeamsContext();
 
   return (
-    <Box mx={4} p={4} borderRadius={5} boxShadow="0 0 8px 2px rgb(0 0 0 / 9%)">
-      <Text fontSize="2xl">CREATE YOUR FIRST TEAM</Text>
+    <Box p={8}>
+      <Text fontSize="2xl">CREATE YOUR CHANNEL</Text>
       <Formik
         initialValues={{ name: '' }}
         onSubmit={(values) => {
           if (values.name.trim()) {
-            const team: Team = {
+            const channel: Channel = {
               _id: randomBytes(12).toString('hex'),
               name: values.name,
-              channels: [],
+              teamId: selectedTeam._id,
             };
             dispatch({
-              type: 'add_team',
-              team,
+              type: 'add_channel',
+              channel,
             });
-            socket?.emit('team_created', { team });
+            socket?.emit('channel_created', channel);
+            onClose && onClose();
           }
         }}
       >
@@ -43,8 +46,11 @@ export const CreateTeam: FC = () => {
               type="submit"
               mt={2}
               w="100%"
-              backgroundColor="purple.500"
               color="white"
+              bgColor="purple.700"
+              _hover={{ bgColor: 'purple.600' }}
+              _active={{ bgColor: 'purple.500' }}
+              _focus={{ outline: 'none' }}
             >
               CREATE
             </Button>

@@ -1,17 +1,20 @@
-import { Channel } from '..';
-import { User } from '../../../types';
+import { ChannelState } from '..';
+import { Channel, User } from '../../../types';
 
 export type Action =
-  | { type: 'set_channel_id'; id: string }
+  | { type: 'set_selected_channel'; channel: Channel }
   | { type: 'add_typing_user'; user: User }
   | { type: 'remove_typing_user'; user: User };
 
-export const channelReducer = (state: Channel, action: Action): Channel => {
+export const channelReducer = (
+  state: ChannelState,
+  action: Action
+): ChannelState => {
   switch (action.type) {
-    case 'set_channel_id':
+    case 'set_selected_channel':
       return {
         ...state,
-        id: action.id,
+        selectedChannel: action.channel,
       };
     case 'add_typing_user':
       return {

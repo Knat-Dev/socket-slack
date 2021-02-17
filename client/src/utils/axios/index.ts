@@ -38,7 +38,7 @@ axios.interceptors.response.use(
             return axios(originalRequest);
           })
           .catch((e) => {
-            console.log('hey');
+            console.log(e);
           });
         return resolve(res);
       }

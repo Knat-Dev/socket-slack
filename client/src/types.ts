@@ -10,6 +10,7 @@ export type Message = {
 export type Channel = {
   teamId: string;
   _id: string;
+  optimisticId?: string;
   name: string;
 };
 

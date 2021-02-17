@@ -2,21 +2,17 @@ import React, { useContext, useEffect, useState } from 'react';
 import { io, Socket as SocketIo } from 'socket.io-client';
 import { useChannelContext } from '..';
 import { User } from '../../types';
+import { getAccessToken, refreshToken } from '../../utils';
 import toast from '../../utils/toast';
 export const getSocket = async () => {
   console.log('Getting a new socket..');
   try {
-    const res = await fetch(`${process.env.REACT_APP_API}/users/refresh`, {
-      method: 'POST',
-      credentials: 'include',
-    });
-    if (res) {
-      const data = await res.json();
-      if (data.ok) {
-        return io('ws://localhost:5000', {
-          query: { token: data.accessToken },
-        });
-      }
+    await refreshToken();
+    const token = getAccessToken();
+    if (token) {
+      return io('ws://localhost:5000', {
+        query: { token },
+      });
     }
   } catch (e) {
     console.log(e);
@@ -37,7 +33,7 @@ export const useSocketContext = () => useContext(SocketContext);
 
 export const SocketContextProvider: React.FC = (props) => {
   const [socketState, setSocketState] = useState<Socket | null>(null);
-  const [{ id }, dispatch] = useChannelContext();
+  const [, dispatch] = useChannelContext();
   const defaultSocketContext: [Socket | null, typeof setSocketState] = [
     socketState,
     setSocketState,
@@ -46,11 +42,8 @@ export const SocketContextProvider: React.FC = (props) => {
   // global events are handled here
   useEffect(() => {
     socketState?.on('connect', () => {
-      if (id) {
-        socketState?.emit('join_room', { id });
-      }
       toast({
-        position: 'top-left',
+        position: 'top-right',
         isClosable: true,
         title: 'Connected!',
         description: 'You have been connected successfully!',
@@ -79,7 +72,7 @@ export const SocketContextProvider: React.FC = (props) => {
       socketState?.off('connect');
       socketState?.off('disconnect');
     };
-  }, [socketState, dispatch, id]);
+  }, [socketState, dispatch]);
 
   return (
     <SocketContext.Provider value={defaultSocketContext}>
