@@ -3,9 +3,10 @@ import { Form, Formik } from 'formik';
 import React, { FC, MouseEvent, useState } from 'react';
 import { HiEmojiHappy } from 'react-icons/hi';
 import { MdDelete, MdEdit } from 'react-icons/md';
-import { FormikInput, IconButton } from '../../../../../../components';
+import { FormikInput } from '../../../../../../components';
 import { useSocketContext } from '../../../../../../context';
 import { Message } from '../../../../../../types';
+import { PopoverIconButton } from './components';
 
 type HoverEvent = MouseEvent<HTMLLIElement, globalThis.MouseEvent>;
 interface Props {
@@ -29,7 +30,7 @@ export const MessageItem: FC<Props> = ({
     'rgba(0,0,0,70%)',
     'rgba(255,255,255,70%)'
   );
-  const popOverBackground = useColorModeValue('#d3d3d3', '#34363c');
+  const popOverBackground = useColorModeValue('#d3d3d3', '#36393F');
 
   const handleMouseOver = (e: HoverEvent) => {
     e.preventDefault();
@@ -43,7 +44,7 @@ export const MessageItem: FC<Props> = ({
     setBeingHovered(false);
   };
 
-  const popOverHeight = '36px';
+  const popOverHeight = '32px';
 
   return (
     <ListItem
@@ -97,44 +98,74 @@ export const MessageItem: FC<Props> = ({
         )}
       </Box>
       {!editingMode && beingHovered && (
-        <Flex
-          h={popOverHeight}
-          backgroundColor={popOverBackground}
+        <Box
           position="absolute"
           top={`calc(-${popOverHeight} / 2)`}
-          borderRadius="4px"
           right="24px"
-          justify="center"
-          align="center"
-          boxShadow="0 2px 2px -1px rgba(0,0,0,0.9)"
-          px={2}
         >
-          {socket?.user?._id === message.user._id && (
-            <>
-              <IconButton
-                mr={1}
-                label="Modify.."
-                onClick={() => setEditingMode(true)}
-              >
-                <MdEdit />
-              </IconButton>
-              <IconButton
-                label="Delete.."
-                onClick={() => {
-                  if (message._id) deleteMessage(message);
-                }}
-              >
-                <MdDelete />
-              </IconButton>
-            </>
-          )}
-          <IconButton
-            label="Add reaction.."
-            onClick={() => setEditingMode(true)}
+          <Flex
+            h={popOverHeight}
+            backgroundColor={popOverBackground}
+            borderRadius="3px"
+            justify="center"
+            align="center"
+            boxShadow="0px 0px 0px 0.5px #292929"
+            position="relative"
+            _hover={{
+              _before: {
+                opacity: 1,
+              },
+            }}
+            _before={{
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              bottom: 0,
+              left: 0,
+              right: 0,
+              borderRadius: 2,
+              boxShadow: '0 4px 4px -2px rgba(0,0,0,0.4)',
+              opacity: 0,
+              transition: 'opacity 0.1s ease',
+            }}
           >
-            <HiEmojiHappy />
-          </IconButton>
-        </Flex>
+            {socket?.user?._id === message.user._id && (
+              <>
+                <PopoverIconButton
+                  minW={popOverHeight}
+                  w={popOverHeight}
+                  h={popOverHeight}
+                  label="EDIT"
+                  borderRadiusPlacement="left"
+                  onClick={() => setEditingMode(true)}
+                >
+                  <MdEdit />
+                </PopoverIconButton>
+                <PopoverIconButton
+                  minW={popOverHeight}
+                  w={popOverHeight}
+                  h={popOverHeight}
+                  label="DELETE"
+                  onClick={() => {
+                    if (message._id) deleteMessage(message);
+                  }}
+                >
+                  <MdDelete />
+                </PopoverIconButton>
+                <PopoverIconButton
+                  minW={popOverHeight}
+                  w={popOverHeight}
+                  h={popOverHeight}
+                  label="REACTIONS"
+                  borderRadiusPlacement="right"
+                  onClick={() => setEditingMode(true)}
+                >
+                  <HiEmojiHappy />
+                </PopoverIconButton>
+              </>
+            )}
+          </Flex>
+        </Box>
       )}
     </ListItem>
   );

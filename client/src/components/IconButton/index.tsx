@@ -25,7 +25,6 @@ export const IconButton: FC<Props> = ({ children, label, ...button }) => {
         onClick={button.onClick}
         _hover={{ backgroundColor: 'purple.600' }}
         _active={{ backgroundColor: 'purple.700' }}
-        _focus={{ outline: 'none' }}
       >
         {children}
       </Button>

@@ -59,7 +59,6 @@ export const Sidebar = () => {
                 }
                 _hover={{ bgColor: 'blue.600', borderRadius: '25%' }}
                 _active={{ bgColor: 'blue.500' }}
-                _focus={{ outline: 'none' }}
                 onClick={async () => {
                   if (selectedTeam._id !== team._id)
                     history.push(
@@ -84,67 +83,79 @@ export const Sidebar = () => {
               bgColor="purple.700"
               _hover={{ bgColor: 'purple.600', borderRadius: '25%' }}
               _active={{ bgColor: 'purple.500' }}
-              _focus={{ outline: 'none' }}
               onClick={onOpen}
             >
               <AiOutlinePlus />
             </Button>
           </Tooltip>
         </Flex>
-        <Flex direction="column">
-          <Box pt={2} px={2} color="blue.400">
+        <Flex direction="column" pt={2}>
+          <Box px={4} color="blue.400">
             {socket.user.name}
           </Box>
-          <Box px={2}>
-            Team Name{' '}
+          <Box px={4}>
+            Team Name:{' '}
             <Text as="span" color="blue.400">
               {selectedTeam.name}
             </Text>
           </Box>
           <List my={4}>
-            <ListItem
-              mb={1}
-              px={2}
-              display="flex"
-              justifyContent="space-between"
-              fontWeight={600}
-            >
-              <Text>Channels</Text>
-              <IconButton
-                background="rgba(0,0,0,.2)"
-                label="Create Channel"
-                onClick={channelOnOpen}
-              >
-                <MdAdd />
-              </IconButton>
-            </ListItem>
-            {selectedTeam.channels.map((channel) => (
+            <Box px={2} w="100%">
               <ListItem
-                w="260px"
-                py="0.25rem"
+                mb={1}
                 px={2}
-                key={channel._id}
-                isTruncated
-                overflow="hidden"
-                textOverflow="ellipsis"
-                transition="background-color 0.2s cubic-bezier(0.11, 0.44, 0.81, 0.43)"
-                backgroundColor={
-                  selectedChannel?._id === channel._id
-                    ? 'rgba(0,0,0,0.2)'
-                    : undefined
-                }
-                _hover={{ backgroundColor: 'rgba(0,0,0,0.2)' }}
-                cursor="pointer"
-                onClick={() => {
-                  history.push(`/dashboard/${selectedTeam._id}/${channel._id}`);
-                }}
+                display="flex"
+                justifyContent="space-between"
+                fontWeight={600}
               >
-                <Text as="span" mr={4}>
-                  #
-                </Text>
-                {channel.name}
+                <Text>Channels</Text>
+                <IconButton
+                  background="rgba(0,0,0,.2)"
+                  label="Create Channel"
+                  onClick={channelOnOpen}
+                >
+                  <MdAdd />
+                </IconButton>
               </ListItem>
-            ))}
+              {selectedTeam.channels.map((channel) => (
+                <ListItem
+                  my="0.25rem"
+                  as="button"
+                  textAlign="left"
+                  py="0.25rem"
+                  w="100%"
+                  px={2}
+                  borderRadius={4}
+                  key={channel._id}
+                  backgroundColor={
+                    selectedChannel?._id === channel._id
+                      ? 'rgba(255,255,255,0.05)'
+                      : undefined
+                  }
+                  _hover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+                  cursor="pointer"
+                  onClick={() => {
+                    history.push(
+                      `/dashboard/${selectedTeam._id}/${channel._id}`
+                    );
+                  }}
+                  display="flex"
+                >
+                  <Box
+                    w="100%"
+                    maxW={225}
+                    isTruncated
+                    overflow="hidden"
+                    textOverflow="ellipsis"
+                  >
+                    <Text as="span" mr={4}>
+                      #
+                    </Text>
+                    {channel.name}
+                  </Box>
+                </ListItem>
+              ))}
+            </Box>
           </List>
         </Flex>
       </Grid>

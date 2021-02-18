@@ -3,12 +3,12 @@ import { AnimatePresence, motion } from 'framer-motion';
 import React, { FC, useEffect, useState } from 'react';
 import { useBeforeunload } from 'react-beforeunload';
 import { RouteComponentProps } from 'react-router-dom';
-import tinyColor from 'tinycolor2';
 import { LoadingScreen } from '../../components';
 import { CreateTeam } from '../../components/';
 import { Layout } from '../../components/Layout';
 import { useChannelContext, useSocketContext } from '../../context';
 import { useTeamsContext } from '../../context/Team';
+import { setSelectedTeam } from '../../context/Team/actions';
 import { Channel, Team, User } from '../../types';
 import { ChatForm } from './components';
 import { Messages } from './components/Messages';
@@ -59,7 +59,7 @@ export const Index: FC<
         const teamIndex = teams.findIndex((team) => team._id === teamId);
         if (teamIndex !== -1) {
           // team was found
-          dispatch({ type: 'set_selected_team', team: teams[teamIndex] });
+          setSelectedTeam(teams[teamIndex], dispatch); // refresh the access token and create a new socket
           if (channelId) {
             const channelIndex = teams[teamIndex].channels.findIndex(
               (channel) => channel._id === channelId
@@ -204,15 +204,6 @@ export const Index: FC<
     <Layout middle={!haveTeams}>
       {haveTeams ? (
         <Flex h="100%" direction="column" w="100%">
-          <Box
-            fontSize="lg"
-            py="0.25rem"
-            textAlign="center"
-            bg={tinyColor('#2c2e31').darken(2).toString()}
-          >
-            # {selectedChannel?.name}
-          </Box>
-
           <Flex
             mr={1}
             grow={1}

@@ -25,7 +25,7 @@ export const teamsReducer = (state: Teams, action: Action): Teams => {
   switch (action.type) {
     case 'set_selected_team': {
       // start off by setting the namespace connection
-      state.socket?.disconnect();
+      state.socket?.close();
       const token = getAccessToken();
       if (!token) return state;
       return {

@@ -13,7 +13,7 @@ const theme = extendTheme({
     global: ({ colorMode }) => ({
       // styles for the `body`
       body: {
-        background: colorMode === 'dark' ? '#232426' : '#fafafa',
+        background: colorMode === 'dark' ? '#36393F' : '#fafafa',
         color: colorMode === 'dark' ? 'white' : 'gray.800',
       },
     }),

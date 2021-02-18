@@ -55,7 +55,6 @@ export const CreateTeam: FC<Props> = ({ onClose }) => {
               bgColor="purple.700"
               _hover={{ bgColor: 'purple.600' }}
               _active={{ bgColor: 'purple.500' }}
-              _focus={{ outline: 'none' }}
             >
               CREATE
             </Button>
