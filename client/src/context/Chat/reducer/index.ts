@@ -2,6 +2,7 @@ import { Chat } from '..';
 import { Message } from '../../../types';
 
 export type Action =
+  | { type: 'set_messages_loading' }
   | { type: 'set_messages'; messages: Message[] }
   | { type: 'shift_message_history'; messages: Message[] }
   | { type: 'delete_message'; messageId: string }
@@ -9,6 +10,11 @@ export type Action =
 
 export const chatReducer = (state: Chat, action: Action): Chat => {
   switch (action.type) {
+    case 'set_messages_loading':
+      return {
+        ...state,
+        loading: true,
+      };
     case 'set_messages':
       return {
         ...state,

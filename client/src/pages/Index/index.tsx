@@ -1,4 +1,4 @@
-import { Box, Flex, Text } from '@chakra-ui/react';
+import { Box, Flex, Grid, Text, useMediaQuery } from '@chakra-ui/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { FC, useEffect, useState } from 'react';
 import { useBeforeunload } from 'react-beforeunload';
@@ -6,6 +6,7 @@ import { RouteComponentProps } from 'react-router-dom';
 import { LoadingScreen } from '../../components';
 import { CreateTeam } from '../../components/';
 import { Layout } from '../../components/Layout';
+import { Sidebar } from '../../components/Sidebar';
 import { useChannelContext, useSocketContext } from '../../context';
 import { useTeamsContext } from '../../context/Team';
 import { setSelectedTeam } from '../../context/Team/actions';
@@ -27,6 +28,7 @@ export const Index: FC<
   ] = useChannelContext();
   const [haveTeams, setHaveTeams] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showMobileMenu] = useMediaQuery('(max-width: 1000px)');
   const { teamId, channelId } = match.params;
   useBeforeunload(async () => {
     if (selectedChannel)
@@ -44,7 +46,10 @@ export const Index: FC<
     if (teams.length) {
       // >= 1
       if (!teamId)
-        history.push(`/dashboard/${teams[0]._id}/${teams[0].channels[0]._id}`);
+        if (teams[0])
+          history.push(
+            `/dashboard/${teams[0]._id}/${teams[0].channels[0]._id}`
+          );
       if (teamId && !channelId) {
         const teamIndex = teams.findIndex((team) => team._id === teamId);
         if (teams[teamIndex])
@@ -203,53 +208,64 @@ export const Index: FC<
   return (
     <Layout middle={!haveTeams}>
       {haveTeams ? (
-        <Flex h="100%" direction="column" w="100%">
-          <Flex
-            mr={1}
-            grow={1}
-            direction="column-reverse"
-            overflow="auto"
-            css={{
-              '&::-webkit-scrollbar': {
-                width: 8,
-              },
-              '&::-webkit-scrollbar-track': {
-                width: 8,
-                backgroundColor: 'rgba(0,0,0,0.1)',
-                borderRadius: 8,
-              },
-              '&::-webkit-scrollbar-thumb': {
-                backgroundColor: 'rgba(0,0,0,0.3)',
-                borderRadius: 8,
-                minHeight: 40,
-              },
-            }}
-          >
-            <Messages />
-          </Flex>
-          <Flex direction="column" mx={2}>
-            <ChatForm />
-            {/* Typing Users */}
-            <Box fontSize="md" color="gray.500" h={6}>
-              <AnimatePresence>
-                {Object.keys(typingUsers).length > 0 && (
-                  <Box
-                    as={motion.div}
-                    h={6}
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{
-                      opacity: 1,
-                      scale: 1,
-                    }}
-                    exit={{ opacity: 0, scale: 0 }}
-                  >
-                    {typingUsersString}
-                  </Box>
-                )}
-              </AnimatePresence>
+        <Grid
+          w="100%"
+          h="100%"
+          templateColumns={showMobileMenu ? 'auto' : '320px auto'}
+        >
+          {!showMobileMenu && (
+            <Box>
+              <Sidebar />
             </Box>
+          )}
+          <Flex h="100%" overflow="hidden" direction="column" w="100%">
+            <Flex
+              mr={1}
+              grow={1}
+              overflow="auto"
+              direction="column-reverse"
+              css={{
+                '&::-webkit-scrollbar': {
+                  width: 8,
+                },
+                '&::-webkit-scrollbar-track': {
+                  width: 8,
+                  backgroundColor: 'rgba(0,0,0,0.1)',
+                  borderRadius: 8,
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  backgroundColor: 'rgba(0,0,0,0.3)',
+                  borderRadius: 8,
+                  minHeight: 40,
+                },
+              }}
+            >
+              <Messages />
+            </Flex>
+            <Flex direction="column" mx={2}>
+              <ChatForm />
+              {/* Typing Users */}
+              <Box fontSize="md" color="gray.500" h={6}>
+                <AnimatePresence>
+                  {Object.keys(typingUsers).length > 0 && (
+                    <Box
+                      as={motion.div}
+                      h={6}
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{
+                        opacity: 1,
+                        scale: 1,
+                      }}
+                      exit={{ opacity: 0, scale: 0 }}
+                    >
+                      {typingUsersString}
+                    </Box>
+                  )}
+                </AnimatePresence>
+              </Box>
+            </Flex>
           </Flex>
-        </Flex>
+        </Grid>
       ) : (
         <CreateTeam />
       )}

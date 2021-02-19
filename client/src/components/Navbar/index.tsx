@@ -5,6 +5,7 @@ import {
   Text,
   useColorMode,
   useDisclosure,
+  useMediaQuery,
 } from '@chakra-ui/react';
 import axios from 'axios';
 import React, { FC, useState } from 'react';
@@ -25,6 +26,7 @@ export const Navbar: FC<Props> = ({ h }) => {
   const [loading, setLoading] = useState(false);
   const { colorMode, toggleColorMode } = useColorMode();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const [showMobileMenu] = useMediaQuery('(max-width: 1000px)');
 
   return (
     <>
@@ -38,9 +40,11 @@ export const Navbar: FC<Props> = ({ h }) => {
         color="white"
       >
         <Flex align="center">
-          <IconButton onClick={onOpen}>
-            <AiOutlineMenu />
-          </IconButton>
+          {showMobileMenu && (
+            <IconButton onClick={onOpen}>
+              <AiOutlineMenu />
+            </IconButton>
+          )}
           <Box lineHeight={h}>
             <Text as={Link} to="/" fontSize="lg">
               CHAT APP

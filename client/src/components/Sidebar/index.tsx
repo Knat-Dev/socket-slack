@@ -36,11 +36,16 @@ export const Sidebar = () => {
   if (!socket?.user) return null;
   return (
     <>
-      <Grid w={320} h="100%" templateColumns="60px auto">
+      <Grid
+        w={320}
+        h="100%"
+        templateColumns="60px auto"
+        backgroundColor="rgba(0,0,0,0.15)"
+      >
         <Flex
           flexDir="column"
           align="center"
-          backgroundColor="rgba(0,0,0,0.2)"
+          backgroundColor="rgba(0,0,0,0.15)"
           pt={2}
         >
           {teams.map((team) => (
@@ -134,7 +139,8 @@ export const Sidebar = () => {
                   }
                   _hover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
                   cursor="pointer"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
                     history.push(
                       `/dashboard/${selectedTeam._id}/${channel._id}`
                     );

@@ -1,6 +1,6 @@
 import { Flex, List, Spinner, Text } from '@chakra-ui/react';
 import { randomBytes } from 'crypto';
-import React, { FC, useEffect, useState } from 'react';
+import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { Waypoint } from 'react-waypoint';
 import { useChannelContext, useSocketContext } from '../../../../context';
 import { useChatContext } from '../../../../context/Chat';
@@ -14,37 +14,73 @@ export const Messages: FC = () => {
   const [{ selectedChannel }] = useChannelContext();
   const [{ socket: nspSocket }] = useTeamsContext();
   const [{ messages, loading }, dispatch] = useChatContext();
-  const [cursor, setCursor] = useState<string | null>(null);
+  const bottom = useRef<HTMLDivElement | null>(null);
+  const hasMoreRef = useRef(false);
   const [hasMore, setHasMore] = useState(false);
 
+  // Loading indicator when changing a channel
   useEffect(() => {
-    (async () => {
-      const res = await axios.get(
-        `${process.env.REACT_APP_API}/chats/messages`,
-        {
-          params: {
-            channelId: selectedChannel?._id,
-            cursor,
-          },
-        }
-      );
+    dispatch({ type: 'set_messages_loading' });
+  }, [selectedChannel, dispatch]);
 
-      if (res.data.messages && !cursor) {
-        dispatch({ type: 'set_messages', messages: res.data.messages });
-        if (res.data.hasMore) setHasMore(true);
-      } else if (res.data.messages && cursor) {
-        if (!res.data.hasMore) setHasMore(false);
-        // dispatch pagination action here
-        console.log('pagination..');
-        dispatch({
-          type: 'shift_message_history',
-          messages: res.data.messages,
-        });
+  // fetch messages
+  const fetchMessages = useCallback(
+    async (cursor: string | null) => {
+      if (selectedChannel) {
+        const res = await axios.get(
+          `${process.env.REACT_APP_API}/chats/messages`,
+          {
+            params: {
+              channelId: selectedChannel._id,
+              cursor,
+            },
+          }
+        );
+        return res.data;
+      }
+    },
+    [selectedChannel]
+  );
+
+  // Fetch messages on channel change
+  useEffect(() => {
+    hasMoreRef.current = false;
+    setHasMore(false);
+
+    (async () => {
+      if (selectedChannel?._id) {
+        const data = await fetchMessages(null);
+
+        if (data.messages) {
+          dispatch({ type: 'set_messages', messages: data.messages });
+          if (data.hasMore) {
+            hasMoreRef.current = true;
+            setHasMore(true);
+          }
+        }
       }
     })();
-  }, [selectedChannel, dispatch, cursor]);
+  }, [dispatch, selectedChannel?._id, fetchMessages]);
+
+  // Fetch more messages callback
+  const fetchMoreMessages = useCallback(async () => {
+    if (messages[0]._id) {
+      const data = await fetchMessages(messages[0]._id);
+      if (!data.hasMore) {
+        hasMoreRef.current = false;
+        setHasMore(false);
+      }
+      // dispatch pagination action here
+      console.log('pagination..');
+      dispatch({
+        type: 'shift_message_history',
+        messages: data.messages,
+      });
+    }
+  }, [messages, fetchMessages, dispatch]);
 
   useEffect(() => {
+    // New messages listener
     nspSocket?.on('new_message', (message: Message) => {
       const optimisticUpdateMessageId = messages.findIndex(
         (optimisticMessage) =>
@@ -63,10 +99,12 @@ export const Messages: FC = () => {
       }
     });
 
+    // Message deleted listener
     nspSocket?.on('message_deleted', ({ id }: { id: string }) => {
       dispatch({ type: 'delete_message', messageId: id });
     });
 
+    // Message edited listener
     nspSocket?.on(
       'message_edited',
       ({ id, text }: { id: string; text: string }) => {
@@ -85,6 +123,7 @@ export const Messages: FC = () => {
     };
   }, [nspSocket, messages, dispatch]);
 
+  // Handle message deletion
   const deleteMessage = (message: Message) => {
     const messageId = message._id;
     if (messageId && message.user._id === socket?.user?._id) {
@@ -93,6 +132,7 @@ export const Messages: FC = () => {
     }
   };
 
+  // Handle message edition
   const editMessage = (message: Message) => {
     console.log(message);
     const messageId = message._id;
@@ -106,6 +146,7 @@ export const Messages: FC = () => {
     }
   };
 
+  // Message render function
   const messageItem = (message: Message, i: number) => (
     <MessageItem
       key={message._id ?? randomBytes(12).toString('hex')}
@@ -131,12 +172,14 @@ export const Messages: FC = () => {
           </Text>
         )}
         {messages.map((message, i) => {
-          if (i === 10 && hasMore)
+          if (i === 13 && hasMore)
             return (
               <Waypoint
                 key={message._id ?? randomBytes(12).toString('hex')}
                 onEnter={() => {
-                  if (messages[0]._id) setCursor(messages[0]._id);
+                  setTimeout(() => {
+                    fetchMoreMessages();
+                  }, 0);
                 }}
               >
                 <div>{messageItem(message, i)}</div>
@@ -144,6 +187,7 @@ export const Messages: FC = () => {
             );
           else return messageItem(message, i);
         })}
+        <div ref={bottom} />
       </List>
     </>
   );
