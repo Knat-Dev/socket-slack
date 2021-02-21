@@ -3,12 +3,12 @@ import { Channel, User } from '../../types';
 import { Action, channelReducer } from './reducer';
 
 export interface ChannelState {
-  selectedChannel: Channel | null;
+  selectedChannel: Channel;
   typingUsers: Pick<User, '_id' | 'name'>[];
 }
 
 const initial: ChannelState = {
-  selectedChannel: null,
+  selectedChannel: { _id: '', name: '', teamId: '' },
   typingUsers: [],
 };
 

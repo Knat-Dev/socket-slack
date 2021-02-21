@@ -156,6 +156,19 @@ http.listen(port, async () => {
           });
         }
       });
+
+      // Typing users
+      socket.on('user_typing', ({ id }) => {
+        if (socket.user?.name) {
+          socket.to(id).emit('user_typing', socket.user);
+        }
+      });
+
+      socket.on('i_stopped_typing', ({ id }) => {
+        if (socket.user?.name) {
+          socket.to(id).emit('user_stopped_typing', socket.user);
+        }
+      });
     });
 
   io.on('connect', async (socket: Socket) => {
@@ -190,19 +203,6 @@ http.listen(port, async () => {
       );
       // console.log("Connected: " + socket.userId);
       socket.emit('welcome', 'Welcome to the server..');
-
-      // Typing users
-      socket.on('i_am_typing', ({ id }) => {
-        if (socket.user?.name) {
-          socket.to(id).emit('user_started_typing', socket.user);
-        }
-      });
-
-      socket.on('i_stopped_typing', ({ id }) => {
-        if (socket.user?.name) {
-          socket.to(id).emit('user_stopped_typing', socket.user);
-        }
-      });
 
       // Teams
       socket.on('team_created', async ({ team }: { team: Team }) => {

@@ -7,6 +7,7 @@ import {
 } from '@chakra-ui/react';
 import { useField } from 'formik';
 import React, { FC } from 'react';
+import { useUIContext } from '../../../../../../context';
 import { useTyping } from './useTyping';
 
 interface Props extends InputProps {
@@ -16,6 +17,7 @@ interface Props extends InputProps {
 
 export const Input: FC<Props> = ({ name, label, ...input }) => {
   const [{ value, ...field }, { error }] = useField(name);
+  const [, , chatInputRef] = useUIContext();
   useTyping(value);
 
   return (
@@ -28,6 +30,9 @@ export const Input: FC<Props> = ({ name, label, ...input }) => {
       <ChakraInput
         focusBorderColor="purple.500"
         value={value}
+        ref={(ref) => {
+          if (!chatInputRef.current && ref) chatInputRef.current = ref;
+        }}
         {...input}
         {...field}
       />

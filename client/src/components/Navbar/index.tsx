@@ -4,15 +4,14 @@ import {
   Flex,
   Text,
   useColorMode,
-  useDisclosure,
   useMediaQuery,
 } from '@chakra-ui/react';
 import axios from 'axios';
-import React, { FC, useState } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import { AiOutlineMenu } from 'react-icons/ai';
 import { MdBrightnessHigh, MdBrightnessLow } from 'react-icons/md';
 import { Link } from 'react-router-dom';
-import { useAuthContext } from '../../context';
+import { useAuthContext, useUIContext } from '../../context';
 import { setAccessToken } from '../../utils';
 import { MobileMenu } from '../MobileMenu';
 import { IconButton } from './components';
@@ -23,10 +22,15 @@ interface Props {
 
 export const Navbar: FC<Props> = ({ h }) => {
   const [, setAuthState] = useAuthContext();
+  const [{ isDrawerOpen, isMobile }, uiDispatch, chatInputRef] = useUIContext();
   const [loading, setLoading] = useState(false);
   const { colorMode, toggleColorMode } = useColorMode();
-  const { isOpen, onOpen, onClose } = useDisclosure();
   const [showMobileMenu] = useMediaQuery('(max-width: 1000px)');
+
+  useEffect(() => {
+    if (showMobileMenu) uiDispatch({ type: 'set_mobile' });
+    else uiDispatch({ type: 'set_desktop' });
+  }, [showMobileMenu, uiDispatch]);
 
   return (
     <>
@@ -40,8 +44,13 @@ export const Navbar: FC<Props> = ({ h }) => {
         color="white"
       >
         <Flex align="center">
-          {showMobileMenu && (
-            <IconButton onClick={onOpen}>
+          {isMobile && (
+            <IconButton
+              onClick={() => {
+                uiDispatch({ type: 'set_drawer_open' });
+                chatInputRef.current?.focus();
+              }}
+            >
               <AiOutlineMenu />
             </IconButton>
           )}
@@ -88,7 +97,12 @@ export const Navbar: FC<Props> = ({ h }) => {
           </Button>
         </Flex>
       </Flex>
-      <MobileMenu isOpen={isOpen} onClose={onClose} />
+      <MobileMenu
+        isOpen={isDrawerOpen}
+        onClose={() => {
+          uiDispatch({ type: 'set_drawer_closed' });
+        }}
+      />
     </>
   );
 };

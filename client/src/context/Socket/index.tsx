@@ -51,7 +51,7 @@ export const SocketContextProvider: React.FC = (props) => {
       });
     });
 
-    socketState?.on('user_started_typing', (user: User) => {
+    socketState?.on('user_typing', (user: User) => {
       dispatch({ type: 'add_typing_user', user });
     });
 
@@ -67,7 +67,7 @@ export const SocketContextProvider: React.FC = (props) => {
 
     return () => {
       socketState?.off('broadcast_me');
-      socketState?.off('user_started_typing');
+      socketState?.off('user_typing');
       socketState?.off('user_stopped_typing');
       socketState?.off('connect');
       socketState?.off('disconnect');

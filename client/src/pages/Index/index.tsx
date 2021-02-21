@@ -1,4 +1,4 @@
-import { Box, Flex, Grid, Text, useMediaQuery } from '@chakra-ui/react';
+import { Box, Flex, Grid, Text } from '@chakra-ui/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { FC, useEffect, useState } from 'react';
 import { useBeforeunload } from 'react-beforeunload';
@@ -7,7 +7,11 @@ import { LoadingScreen } from '../../components';
 import { CreateTeam } from '../../components/';
 import { Layout } from '../../components/Layout';
 import { Sidebar } from '../../components/Sidebar';
-import { useChannelContext, useSocketContext } from '../../context';
+import {
+  useChannelContext,
+  useSocketContext,
+  useUIContext,
+} from '../../context';
 import { useTeamsContext } from '../../context/Team';
 import { setSelectedTeam } from '../../context/Team/actions';
 import { Channel, Team, User } from '../../types';
@@ -18,6 +22,7 @@ export const Index: FC<
   RouteComponentProps<{ teamId: string; channelId: string }>
 > = ({ history, match }) => {
   const [socket] = useSocketContext();
+  const [{ isMobile }] = useUIContext();
   const [
     { teams, selectedTeam, socket: nspSocket },
     dispatch,
@@ -28,7 +33,6 @@ export const Index: FC<
   ] = useChannelContext();
   const [haveTeams, setHaveTeams] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [showMobileMenu] = useMediaQuery('(max-width: 1000px)');
   const { teamId, channelId } = match.params;
   useBeforeunload(async () => {
     if (selectedChannel)
@@ -211,9 +215,9 @@ export const Index: FC<
         <Grid
           w="100%"
           h="100%"
-          templateColumns={showMobileMenu ? 'auto' : '320px auto'}
+          templateColumns={isMobile ? 'auto' : '320px auto'}
         >
-          {!showMobileMenu && (
+          {!isMobile && (
             <Box>
               <Sidebar />
             </Box>

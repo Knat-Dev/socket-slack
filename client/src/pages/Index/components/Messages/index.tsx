@@ -172,7 +172,7 @@ export const Messages: FC = () => {
           </Text>
         )}
         {messages.map((message, i) => {
-          if (i === 13 && hasMore)
+          if (i === 5 && hasMore)
             return (
               <Waypoint
                 key={message._id ?? randomBytes(12).toString('hex')}
