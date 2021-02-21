@@ -1,5 +1,6 @@
 import {
   getModelForClass,
+  index,
   modelOptions,
   prop,
   Severity,
@@ -7,6 +8,7 @@ import {
 import { ObjectId } from '../../types';
 
 @modelOptions({ options: { allowMixed: Severity.ALLOW } })
+@index({ teamId: 1, name: 1 }, { unique: true })
 export class Channel {
   _id?: ObjectId;
 

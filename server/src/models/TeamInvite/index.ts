@@ -8,22 +8,18 @@ import {
 import { ObjectId } from '../../types';
 
 @modelOptions({ options: { allowMixed: Severity.ALLOW } })
-@index({ name: 1, ownerId: 1 }, { unique: true })
-export class Team {
+@index({ createdAt: 1 }, { expireAfterSeconds: 604800 }) // 604800 seconds = 1 week
+export class TeamInvite {
   _id?: string;
-  optimisticId?: string;
 
   @prop()
-  name: string;
+  teamId: ObjectId;
 
   @prop()
-  ownerId: ObjectId;
-
-  @prop()
-  userIds: ObjectId[];
+  code: string;
 }
 
-export const TeamModel = getModelForClass(Team, {
+export const TeamInviteModel = getModelForClass(TeamInvite, {
   schemaOptions: {
     timestamps: true,
   },

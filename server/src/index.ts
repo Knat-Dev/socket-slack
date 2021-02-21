@@ -7,9 +7,10 @@ import { createServer } from 'http';
 import mongoose from 'mongoose';
 import { Server } from 'socket.io';
 import { logger } from './middleware';
-import { ChannelModel, MessageModel } from './models';
+import { ChannelModel, MessageModel, TeamInviteModel } from './models';
 import { Team, TeamModel } from './models/Team';
 import { chatRoomsRoute } from './routes/chatRooms.route';
+import { teamRouter } from './routes/teams.route';
 import { userRouter } from './routes/users.route';
 import { Socket } from './types';
 import { socketAuth } from './utils';
@@ -34,6 +35,7 @@ app.use(
 // Routers
 app.use('/users', userRouter);
 app.use('/chats', chatRoomsRoute);
+app.use('/teams', teamRouter);
 
 const http = createServer(app);
 
@@ -43,7 +45,13 @@ http.listen(port, async () => {
     useNewUrlParser: true,
     useUnifiedTopology: true,
     useFindAndModify: false,
+    useCreateIndex: true,
+    autoIndex: true,
   });
+  TeamModel.init();
+  ChannelModel.init();
+  TeamInviteModel.init();
+
   console.log('Connected to MongoDB!');
 
   const io = new Server(http, {
